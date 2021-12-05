@@ -1,25 +1,48 @@
-# Tutorial 2-1: Create a Go module
+# Tutorial 2-2: Call your code from another module
 
-[Tutorial: Create a Go module](https://go.dev/doc/tutorial/create-module)
-
-```go
-package greetings
-
-import "fmt"
-
-// Hello returns a greeting for the named person.
-func Hello(name string) string {
-    // Return a greeting that embeds the name in a message.
-    message := fmt.Sprintf("Hi, %v. Welcome!", name)
-    return message
-}
-```
-
-- Declare a `greetings` package to collect related functions.
-- In Go, a function whose name starts with a capital letter can be called by a function not in the same package. This is known in Go as an **exported name**. For more about exported names, see [Exported names](https://go.dev/tour/basics/3) in the Go tour.
-- In Go, the `:=` operator is a shortcut for declaring and initializing a variable in one line (Go uses the value on the right to determine the variable's type). Taking the long way, you might have written this as:
+1. example.com/hello module 새로 만들기
+    
+    ```bash
+    $ go mod init example.com/hello
+    ```
     
     ```go
-    var message string
-    message = fmt.Sprintf("Hi, %v. Welcome!", name)
+    package main
+    
+    import (
+        "fmt"
+    
+        "example.com/greetings"
+    )
+    
+    func main() {
+        // Get a greeting message and print it.
+        message := greetings.Hello("Gladys")
+        fmt.Println(message)
+    }
+    ```
+    
+2. Edit the `example.com/hello` module to use your local `example.com/greetings` module.
+    - For production use, you’d publish the `example.com/greetings` module from its repository (with a module path that reflected its published location), where Go tools could find it to download it.
+    - For now, because you haven't published the module yet, you need to adapt the `example.com/hello` module so it can find the `example.com/greetings` code on your local file system.
+    
+    2-1. use the `[go mod edit` command](https://go.dev/ref/mod#go-mod-edit) to edit the `example.com/hello` module to redirect Go tools from its module path (where the module isn't) **to the local directory** (where it is).
+    
+    ```bash
+    # From the command prompt in the hello directory, run the following command:
+    $ go mod edit -replace example.com/greetings=../greetings
+    ```
+    
+    2-2. From the command prompt in the hello directory, run the `[go mod tidy` command](https://go.dev/ref/mod#go-mod-tidy) to **synchronize** the `example.com/hello` module's dependencies, adding those required by the code, but not yet tracked in the module.
+    
+    ```bash
+    $ go mod tidy
+    go: found example.com/greetings in example.com/greetings v0.0.0-00010101000000-000000000000
+    ```
+    
+3. run
+    
+    ```go
+    $ go run .
+    Hi, Gladys. Welcome!
     ```
