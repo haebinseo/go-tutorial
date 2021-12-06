@@ -1,48 +1,73 @@
-# Tutorial 2-2: Call your code from another module
+# Tutorial 2-3: Return and handle an error
 
-1. example.com/hello module 새로 만들기
-    
-    ```bash
-    $ go mod init example.com/hello
-    ```
+1. modify greetings/greetings.go file
     
     ```go
+    // greetings.go 
+    package greetings
+    
+    import (
+        "errors"
+        "fmt"
+    )
+    
+    // Hello returns a greeting for the named person.
+    func Hello(name string) (string, error) {
+        // If no name was given, return an error with a message.
+        if name == "" {
+            return "", errors.New("empty name")
+        }
+    
+        // If a name was received, return a value that embeds the name
+        // in a greeting message.
+        message := fmt.Sprintf("Hi, %v. Welcome!", name)
+        return message, nil
+    }
+    ```
+    
+    - Any Go function **can return multiple values**
+    - `nil` means no error
+2. modify hello/hello.go file
+    
+    ```go
+    // hello.go
     package main
     
     import (
         "fmt"
+        "log"
     
         "example.com/greetings"
     )
     
     func main() {
-        // Get a greeting message and print it.
-        message := greetings.Hello("Gladys")
+        // Set properties of the predefined Logger, including
+        // the log entry prefix and a flag to disable printing
+        // the time, source file, and line number.
+        log.SetPrefix("greetings: ")
+        log.SetFlags(0)
+    
+        // Request a greeting message.
+        message, err := greetings.Hello("")
+        // If an error was returned, print it to the console and
+        // exit the program.
+        if err != nil {
+            log.Fatal(err)
+        }
+    
+        // If no error was returned, print the returned message
+        // to the console.
         fmt.Println(message)
     }
     ```
     
-2. Edit the `example.com/hello` module to use your local `example.com/greetings` module.
-    - For production use, you’d publish the `example.com/greetings` module from its repository (with a module path that reflected its published location), where Go tools could find it to download it.
-    - For now, because you haven't published the module yet, you need to adapt the `example.com/hello` module so it can find the `example.com/greetings` code on your local file system.
-    
-    2-1. use the `[go mod edit` command](https://go.dev/ref/mod#go-mod-edit) to edit the `example.com/hello` module to redirect Go tools from its module path (where the module isn't) **to the local directory** (where it is).
+    - Use the functions in the standard library's `log package` to output error information. If you get an error, you use the `log` package's `[Fatal` function](https://pkg.go.dev/log?tab=doc#Fatal) to **print the error and stop the program**.
+3. run and check an error
     
     ```bash
-    # From the command prompt in the hello directory, run the following command:
-    $ go mod edit -replace example.com/greetings=../greetings
-    ```
-    
-    2-2. From the command prompt in the hello directory, run the `[go mod tidy` command](https://go.dev/ref/mod#go-mod-tidy) to **synchronize** the `example.com/hello` module's dependencies, adding those required by the code, but not yet tracked in the module.
-    
-    ```bash
-    $ go mod tidy
-    go: found example.com/greetings in example.com/greetings v0.0.0-00010101000000-000000000000
-    ```
-    
-3. run
-    
-    ```go
     $ go run .
-    Hi, Gladys. Welcome!
+    greetings: empty name
+    exit status 1
     ```
+
+That's common error handling in Go: **Return an error as a value** so the caller can check for it.
